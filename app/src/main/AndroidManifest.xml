@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-        package="com.qp.rtc">
+        package="com.qp.RTC">
 
     <uses-feature android:name="android.hardware.camera" />
     <uses-feature android:name="android.hardware.camera.autofocus" />
@@ -30,7 +30,7 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="com.qp.rtc.RTCActivity"
+            android:name="com.qp.RTC.RTCActivity"
             android:launchMode="singleTop"
             android:screenOrientation="portrait"
             android:windowSoftInputMode="stateAlwaysHidden">

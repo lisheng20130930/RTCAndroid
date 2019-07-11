@@ -1,4 +1,4 @@
-package com.qp.rtc;
+package com.qp.RTC;
 
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.drafts.Draft;

@@ -1,4 +1,4 @@
-package com.qp.rtc;
+package com.qp.RTC;
 
 import java.math.BigInteger;
 

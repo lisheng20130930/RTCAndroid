@@ -5,8 +5,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 
-import com.qp.rtc.AVChatManager;
-import com.qp.rtc.R;
+import com.qp.RTC.AVChatManager;
+import com.qp.RTC.R;
 
 public class MainActivity extends AppCompatActivity {
     @Override
