@@ -6,7 +6,6 @@ import android.opengl.EGLContext;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -15,6 +14,8 @@ import android.widget.Button;
 import org.webrtc.MediaStream;
 import org.webrtc.VideoRenderer;
 import org.webrtc.VideoRendererGui;
+
+import utils.Logger;
 
 public class RTCActivity extends AppCompatActivity implements RTCClient.RTCClientListener{
     private static final String KEY_CALLEE = "CALLEE";
@@ -80,7 +81,7 @@ public class RTCActivity extends AppCompatActivity implements RTCClient.RTCClien
                 _client.initializeMediaContext(RTCActivity.this, true, true, true, con);
                 _client.start(_callee,_jsep);
             } catch (Exception ex) {
-                Log.e("computician.janusclient", ex.getMessage());
+                Logger.log("computician.janusclient==>"+ex.getMessage());
             }
         }
     }

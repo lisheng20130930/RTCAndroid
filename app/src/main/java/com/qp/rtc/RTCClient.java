@@ -2,7 +2,6 @@ package com.qp.rtc;
 
 import android.content.Context;
 import android.opengl.EGLContext;
-import android.util.Log;
 
 import org.json.JSONObject;
 import org.webrtc.AudioSource;
