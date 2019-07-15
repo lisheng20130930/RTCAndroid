@@ -139,12 +139,16 @@ public class RTCClient implements AVChatManager.RTCClientInterface {
 
         @Override
         public void onAddStream(MediaStream stream) {
-            _listener.onRemoteStream(stream);
+            if(null!=_listener) {
+                _listener.onRemoteStream(stream);
+            }
         }
 
         @Override
         public void onRemoveStream(MediaStream stream) {
-            _listener.onRemoveRemoteStream(stream);
+            if(null!=_listener) {
+                _listener.onRemoveRemoteStream(stream);
+            }
         }
 
         @Override
@@ -244,6 +248,12 @@ public class RTCClient implements AVChatManager.RTCClientInterface {
     }
 
     public void abort(){
+        if(null != _pc) {
+            _pc.close(); // CLOSE PEER
+        }
+        _listener = null;
+        factory = null;
+        _pc = null;
         AVChatManager.getInstance().setRTCHandler(null);
         AVChatManager.getInstance().abort();
     }
