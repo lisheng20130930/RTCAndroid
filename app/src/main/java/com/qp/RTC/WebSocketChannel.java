@@ -38,7 +38,7 @@ public class WebSocketChannel extends WebSocketClient {
         super(serverUri, protocolDraft);
     }
 
-    public static WebSocketChannel initWithAccount(String name){
+    public static WebSocketChannel initWithUsrName(String name){
         WebSocketChannel websocket = null;
         try {
             ArrayList<IProtocol> protocols = new ArrayList<IProtocol>();

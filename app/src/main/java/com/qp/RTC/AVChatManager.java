@@ -115,7 +115,7 @@ public class AVChatManager implements WebSocketChannel.Delegate{
         if(_websocket!=null){
             _websocket.disconnect();
         }
-        _websocket = WebSocketChannel.initWithAccount(name);
+        _websocket = WebSocketChannel.initWithUsrName(name);
         _websocket.setDelegate(this);
     }
 
