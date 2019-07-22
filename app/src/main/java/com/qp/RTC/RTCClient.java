@@ -1,6 +1,7 @@
 package com.qp.RTC;
 
 import android.content.Context;
+import android.media.AudioManager;
 import android.opengl.EGLContext;
 
 import org.json.JSONObject;
@@ -21,8 +22,12 @@ import org.webrtc.VideoTrack;
 
 import java.util.LinkedList;
 
+import utils.Logger;
+
 public class RTCClient implements AVChatManager.RTCClientInterface {
     private PeerConnectionFactory factory = null;
+    private MediaStream localstream = null;
+    private boolean bIsFrontCamera = true;
 
     public interface RTCClientListener{
         void onLocalStream(MediaStream stream);
@@ -54,9 +59,8 @@ public class RTCClient implements AVChatManager.RTCClientInterface {
     }
 
     private RTCClientListener _listener = null;
-    private String _callee = null;
     private PeerConnection _pc = null;
-
+    public String _callee = null;
 
     public RTCClient(RTCClientListener listener){
         _listener = listener;
@@ -80,18 +84,26 @@ public class RTCClient implements AVChatManager.RTCClientInterface {
     private final String AUDIO_TRACK_ID = "1928882";
     private final String LOCAL_MEDIA_ID = "1198181";
 
-    private MediaStream createLocalMediaStream(){
-        AudioSource as = factory.createAudioSource(new MediaConstraints());
-        AudioTrack audioTrack = factory.createAudioTrack(AUDIO_TRACK_ID, as);
 
-        VideoCapturer capturer = VideoCapturerAndroid.create(VideoCapturerAndroid.getNameOfFrontFacingDevice());
+    private VideoTrack getCameraVideoTrack(boolean bIsFront){
+        VideoCapturer capturer = null;
+        if (bIsFront) {
+            capturer = VideoCapturerAndroid.create(VideoCapturerAndroid.getNameOfFrontFacingDevice());
+        }else{
+            capturer = VideoCapturerAndroid.create(VideoCapturerAndroid.getNameOfBackFacingDevice());
+        }
         MediaConstraints constraints = new MediaConstraints();
         constraints.mandatory.add(new MediaConstraints.KeyValuePair("maxWidth",Integer.toString(960)));
         constraints.mandatory.add(new MediaConstraints.KeyValuePair("maxHeight",Integer.toString(540)));
         constraints.mandatory.add(new MediaConstraints.KeyValuePair("maxFrameRate",Integer.toString(15)));
         VideoSource vs = factory.createVideoSource(capturer, constraints);
-        VideoTrack videoTrack = factory.createVideoTrack(VIDEO_TRACK_ID, vs);
+        return factory.createVideoTrack(VIDEO_TRACK_ID, vs);
+    }
 
+    private MediaStream createLocalMediaStream(){
+        AudioSource as = factory.createAudioSource(new MediaConstraints());
+        AudioTrack audioTrack = factory.createAudioTrack(AUDIO_TRACK_ID, as);
+        VideoTrack videoTrack = getCameraVideoTrack(bIsFrontCamera);
         MediaStream stream = factory.createLocalMediaStream(LOCAL_MEDIA_ID);
         stream.addTrack(audioTrack);
         stream.addTrack(videoTrack);
@@ -99,6 +111,10 @@ public class RTCClient implements AVChatManager.RTCClientInterface {
             _listener.onLocalStream(stream);
         }
         return stream;
+    }
+
+    private void swapLocalVideoTrack(){
+        return;
     }
 
     class PeerConnectionObserver implements PeerConnection.Observer {
@@ -185,7 +201,8 @@ public class RTCClient implements AVChatManager.RTCClientInterface {
 
     private PeerConnection createMediaPeerConnection(){
         PeerConnection pc = createPeerConnection();
-        pc.addStream(createLocalMediaStream());
+        localstream = createLocalMediaStream();
+        pc.addStream(localstream);
         return pc;
     }
 
@@ -247,10 +264,32 @@ public class RTCClient implements AVChatManager.RTCClientInterface {
         AVChatManager.getInstance().hangup(_callee!=null);
     }
 
+    public static void setAudioStreamType(Context ctx, boolean speaker) {
+        try {
+            AudioManager audioManager = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
+            if (speaker) {
+                audioManager.setSpeakerphoneOn(true);
+                audioManager.setStreamVolume(AudioManager.STREAM_SYSTEM,
+                        audioManager.getStreamVolume(AudioManager.STREAM_SYSTEM), AudioManager.FX_KEY_CLICK);
+            } else {
+                audioManager.setSpeakerphoneOn(false);
+                audioManager.setStreamVolume(AudioManager.STREAM_VOICE_CALL,
+                        audioManager.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL), AudioManager.FX_KEY_CLICK);
+            }
+        }catch (Exception e){
+            Logger.log(e.getMessage());
+        }
+    }
+
+    public void switchCamera(){
+        swapLocalVideoTrack();
+    }
+
     public void abort(){
         if(null != _pc) {
             _pc.close(); // CLOSE PEER
         }
+        localstream = null;
         _listener = null;
         factory = null;
         _pc = null;

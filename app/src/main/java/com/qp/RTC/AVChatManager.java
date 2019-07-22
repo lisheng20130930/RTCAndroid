@@ -42,6 +42,10 @@ public class AVChatManager implements WebSocketChannel.Delegate{
         return InstanceHolder.instance;
     }
 
+    public static void cleanup(){
+        getInstance().abort();
+    }
+
     public void setRTCHandler(RTCClientInterface handler){
         _handler = handler;
     }
@@ -152,11 +156,13 @@ public class AVChatManager implements WebSocketChannel.Delegate{
     }
 
     public void abort(){
-        _websocket.setDelegate(null);
+        if(null!=_websocket) {
+            _websocket.setDelegate(null);
+            _websocket.disconnect();
+        }
         _listener = null;
         _handleId = null;
         _observer = null;
-        _websocket.disconnect();
         _websocket = null;
     }
 }

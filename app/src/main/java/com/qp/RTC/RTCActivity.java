@@ -98,6 +98,8 @@ public class RTCActivity extends AppCompatActivity implements RTCClient.RTCClien
         vsv = (GLSurfaceView)findViewById(R.id.glview);
         vsv.setPreserveEGLContextOnPause(true);
         vsv.setKeepScreenOn(true);
+
+        //RTCClient.setAudioStreamType(this,true);
         VideoRendererGui.setView(vsv, new MyInit(callee,jsep));
 
         remoteRender = VideoRendererGui.create(0, 0, 100, 100, VideoRendererGui.ScalingType.SCALE_ASPECT_FIT, false);
