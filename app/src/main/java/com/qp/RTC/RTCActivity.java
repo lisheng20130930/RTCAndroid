@@ -11,9 +11,19 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
 
+import org.webrtc.AudioSource;
+import org.webrtc.AudioTrack;
+import org.webrtc.Camera1Enumerator;
+import org.webrtc.EglBase;
+import org.webrtc.MediaConstraints;
 import org.webrtc.MediaStream;
-import org.webrtc.VideoRenderer;
-import org.webrtc.VideoRendererGui;
+import org.webrtc.PeerConnectionFactory;
+import org.webrtc.SurfaceTextureHelper;
+import org.webrtc.SurfaceViewRenderer;
+import org.webrtc.VideoCapturer;
+import org.webrtc.VideoSource;
+import org.webrtc.VideoTrack;
+
 
 import utils.Logger;
 
@@ -21,9 +31,8 @@ public class RTCActivity extends AppCompatActivity implements RTCClient.RTCClien
     private static final String KEY_CALLEE = "CALLEE";
     private static final String KEY_JSEP = "JSEP";
     private RTCClient _client = null;
-    private VideoRenderer.Callbacks localRender;
-    private VideoRenderer.Callbacks remoteRender;
-    private GLSurfaceView vsv = null;
+    private SurfaceViewRenderer localRender;
+    private SurfaceViewRenderer  remoteRender;
     private Button hangup = null;
 
     public static void outgoingcall(Context ctx, String callee){
@@ -41,22 +50,26 @@ public class RTCActivity extends AppCompatActivity implements RTCClient.RTCClien
     }
 
     @Override
-    public void onLocalStream(MediaStream stream) {
-        stream.videoTracks.get(0).addRenderer(new VideoRenderer(localRender));
-        VideoRendererGui.update(localRender, 0, 0, 100, 100, VideoRendererGui.ScalingType.SCALE_ASPECT_FILL, true);
+    public void onLocalStream(final MediaStream stream) {
+        stream.videoTracks.get(0).addSink(localRender);
+        localRender.setMirror(true);
+        localRender.init(_client._eglContext, null);
     }
 
     @Override
     public void onRemoteStream(MediaStream stream) {
-        stream.videoTracks.get(0).setEnabled(true);
-        stream.videoTracks.get(0).addRenderer(new VideoRenderer(remoteRender));
-        VideoRendererGui.update(remoteRender, 0, 0, 100, 100, VideoRendererGui.ScalingType.SCALE_ASPECT_FILL, false);
-        VideoRendererGui.update(localRender, 72, 72, 25, 25, VideoRendererGui.ScalingType.SCALE_ASPECT_FILL, true);
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                stream.videoTracks.get(0).addSink(remoteRender);
+                remoteRender.init(_client._eglContext, null);
+            }
+        });
     }
 
     @Override
     public void onRemoveRemoteStream(MediaStream stream) {
-        return;
+        stream.videoTracks.get(0).removeSink(remoteRender);
     }
 
     @Override
@@ -65,46 +78,22 @@ public class RTCActivity extends AppCompatActivity implements RTCClient.RTCClien
         finish();
     }
 
-    private class MyInit implements Runnable {
-        public String _callee = null;
-        public String _jsep = null;
-
-        public MyInit(String callee,String jsep){
-            _callee = callee;
-            _jsep = jsep;
-            _client = new RTCClient(RTCActivity.this);
-        }
-
-        public void run() {
-            try {
-                EGLContext con = VideoRendererGui.getEGLContext();
-                _client.initializeMediaContext(RTCActivity.this, true, true, true, con);
-                _client.start(_callee,_jsep);
-            } catch (Exception ex) {
-                Logger.log("computician.janusclient==>"+ex.getMessage());
-            }
-        }
-    }
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.activity_nvchat);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        final String callee = getIntent().getStringExtra(KEY_CALLEE);
-        String jsep = getIntent().getStringExtra(KEY_JSEP);
-
-        vsv = (GLSurfaceView)findViewById(R.id.glview);
-        vsv.setPreserveEGLContextOnPause(true);
-        vsv.setKeepScreenOn(true);
+        String _callee = getIntent().getStringExtra(KEY_CALLEE);
+        String _jsep = getIntent().getStringExtra(KEY_JSEP);
 
         //RTCClient.setAudioStreamType(this,true);
-        VideoRendererGui.setView(vsv, new MyInit(callee,jsep));
 
-        remoteRender = VideoRendererGui.create(0, 0, 100, 100, VideoRendererGui.ScalingType.SCALE_ASPECT_FIT, false);
-        localRender  = VideoRendererGui.create(0, 0, 100, 100, VideoRendererGui.ScalingType.SCALE_ASPECT_FIT, false);
+        //remoteRender = VideoRendererGui.create(0, 0, 100, 100, VideoRendererGui.ScalingType.SCALE_ASPECT_FIT, false);
+        //localRender  = VideoRendererGui.create(0, 0, 100, 100, VideoRendererGui.ScalingType.SCALE_ASPECT_FIT, false);
 
+        remoteRender = findViewById(R.id.remoteView);
+        localRender = findViewById(R.id.localView);
         hangup = (Button)findViewById(R.id.huangup);
         hangup.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -112,6 +101,41 @@ public class RTCActivity extends AppCompatActivity implements RTCClient.RTCClien
                 _client.hangup();
             }
         });
+
+        EglBase.Context eglBaseContext = EglBase.create().getEglBaseContext();
+
+        _client = new RTCClient(RTCActivity.this);
+        _client.initializeMediaContext(getApplicationContext(), true, true, true, eglBaseContext);
+        _client.start(_callee,_jsep);
+    }
+
+    private VideoCapturer createCameraCapturer() {
+        Camera1Enumerator enumerator = new Camera1Enumerator(false);
+        final String[] deviceNames = enumerator.getDeviceNames();
+
+        // First, try to find front facing camera
+        for (String deviceName : deviceNames) {
+            if (enumerator.isFrontFacing(deviceName)) {
+                VideoCapturer videoCapturer = enumerator.createCapturer(deviceName, null);
+
+                if (videoCapturer != null) {
+                    return videoCapturer;
+                }
+            }
+        }
+
+        // Front facing camera not found, try something else
+        for (String deviceName : deviceNames) {
+            if (!enumerator.isFrontFacing(deviceName)) {
+                VideoCapturer videoCapturer = enumerator.createCapturer(deviceName, null);
+
+                if (videoCapturer != null) {
+                    return videoCapturer;
+                }
+            }
+        }
+
+        return null;
     }
 
     @Override

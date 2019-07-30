@@ -2,21 +2,24 @@ package com.qp.RTC;
 
 import android.content.Context;
 import android.media.AudioManager;
-import android.opengl.EGLContext;
 
 import org.json.JSONObject;
 import org.webrtc.AudioSource;
 import org.webrtc.AudioTrack;
+import org.webrtc.Camera1Enumerator;
+import org.webrtc.CameraVideoCapturer;
 import org.webrtc.DataChannel;
+import org.webrtc.EglBase;
 import org.webrtc.IceCandidate;
 import org.webrtc.MediaConstraints;
 import org.webrtc.MediaStream;
 import org.webrtc.PeerConnection;
 import org.webrtc.PeerConnectionFactory;
+import org.webrtc.RtpReceiver;
 import org.webrtc.SdpObserver;
 import org.webrtc.SessionDescription;
+import org.webrtc.SurfaceTextureHelper;
 import org.webrtc.VideoCapturer;
-import org.webrtc.VideoCapturerAndroid;
 import org.webrtc.VideoSource;
 import org.webrtc.VideoTrack;
 
@@ -25,9 +28,15 @@ import java.util.LinkedList;
 import utils.Logger;
 
 public class RTCClient implements AVChatManager.RTCClientInterface {
+    public EglBase.Context _eglContext = null;
+    public String _callee = null;
     private PeerConnectionFactory factory = null;
     private MediaStream localstream = null;
     private boolean bIsFrontCamera = true;
+    private RTCClientListener _listener = null;
+    private PeerConnection _pc = null;
+    private Context _context = null;
+    private VideoCapturer _capturer = null;
 
     public interface RTCClientListener{
         void onLocalStream(MediaStream stream);
@@ -58,17 +67,18 @@ public class RTCClient implements AVChatManager.RTCClientInterface {
         AVChatManager.getInstance().record(true,name);
     }
 
-    private RTCClientListener _listener = null;
-    private PeerConnection _pc = null;
-    public String _callee = null;
 
     public RTCClient(RTCClientListener listener){
         _listener = listener;
     }
 
-    public void initializeMediaContext(Context context, boolean audio, boolean video, boolean videoHwAcceleration, EGLContext eglContext) {
-        PeerConnectionFactory.initializeAndroidGlobals(context, audio, video, videoHwAcceleration, eglContext);
-        factory = new PeerConnectionFactory();
+    public void initializeMediaContext(Context context, boolean audio, boolean video, boolean videoHwAcceleration, EglBase.Context eglContext) {
+        PeerConnectionFactory.InitializationOptions initializationOptions =
+                PeerConnectionFactory.InitializationOptions.builder(context).createInitializationOptions();
+        PeerConnectionFactory.initialize(initializationOptions);
+        _context = context;
+        _eglContext = eglContext;
+        factory = PeerConnectionFactory.builder().createPeerConnectionFactory();
     }
 
     public void start(String callee,String jsep){
@@ -85,18 +95,27 @@ public class RTCClient implements AVChatManager.RTCClientInterface {
     private final String LOCAL_MEDIA_ID = "1198181";
 
 
-    private VideoTrack getCameraVideoTrack(boolean bIsFront){
-        VideoCapturer capturer = null;
-        if (bIsFront) {
-            capturer = VideoCapturerAndroid.create(VideoCapturerAndroid.getNameOfFrontFacingDevice());
-        }else{
-            capturer = VideoCapturerAndroid.create(VideoCapturerAndroid.getNameOfBackFacingDevice());
+    private VideoCapturer createCameraCapturer(boolean bIsFront) {
+        Camera1Enumerator enumerator = new Camera1Enumerator(false);
+        final String[] deviceNames = enumerator.getDeviceNames();
+
+        for (String deviceName : deviceNames) {
+            if (bIsFront==enumerator.isFrontFacing(deviceName)) {
+                VideoCapturer videoCapturer = enumerator.createCapturer(deviceName, null);
+                if (videoCapturer != null) {
+                    return videoCapturer;
+                }
+            }
         }
-        MediaConstraints constraints = new MediaConstraints();
-        constraints.mandatory.add(new MediaConstraints.KeyValuePair("maxWidth",Integer.toString(960)));
-        constraints.mandatory.add(new MediaConstraints.KeyValuePair("maxHeight",Integer.toString(540)));
-        constraints.mandatory.add(new MediaConstraints.KeyValuePair("maxFrameRate",Integer.toString(15)));
-        VideoSource vs = factory.createVideoSource(capturer, constraints);
+
+        return null;
+    }
+
+    private VideoTrack getCameraVideoTrack(boolean bIsFront){
+        _capturer = createCameraCapturer(bIsFront);
+        VideoSource vs = factory.createVideoSource(_capturer);
+        SurfaceTextureHelper surfaceTextureHelper = SurfaceTextureHelper.create("CaptureThread", _eglContext);
+        _capturer.startCapture(480, 640, 15);
         return factory.createVideoTrack(VIDEO_TRACK_ID, vs);
     }
 
@@ -114,7 +133,11 @@ public class RTCClient implements AVChatManager.RTCClientInterface {
     }
 
     private void swapLocalVideoTrack(){
-        return;
+        if (_capturer != null) {
+            if (_capturer instanceof CameraVideoCapturer) {
+                ((CameraVideoCapturer)_capturer).switchCamera(null);
+            }
+        }
     }
 
     class PeerConnectionObserver implements PeerConnection.Observer {
@@ -154,6 +177,11 @@ public class RTCClient implements AVChatManager.RTCClientInterface {
         }
 
         @Override
+        public void onIceCandidatesRemoved(IceCandidate[] iceCandidates) {
+
+        }
+
+        @Override
         public void onAddStream(MediaStream stream) {
             if(null!=_listener) {
                 _listener.onRemoteStream(stream);
@@ -173,6 +201,11 @@ public class RTCClient implements AVChatManager.RTCClientInterface {
 
         @Override
         public void onRenegotiationNeeded() {
+
+        }
+
+        @Override
+        public void onAddTrack(RtpReceiver rtpReceiver, MediaStream[] mediaStreams) {
 
         }
     }
