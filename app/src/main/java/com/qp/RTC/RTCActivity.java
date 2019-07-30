@@ -87,11 +87,6 @@ public class RTCActivity extends AppCompatActivity implements RTCClient.RTCClien
         String _callee = getIntent().getStringExtra(KEY_CALLEE);
         String _jsep = getIntent().getStringExtra(KEY_JSEP);
 
-        //RTCClient.setAudioStreamType(this,true);
-
-        //remoteRender = VideoRendererGui.create(0, 0, 100, 100, VideoRendererGui.ScalingType.SCALE_ASPECT_FIT, false);
-        //localRender  = VideoRendererGui.create(0, 0, 100, 100, VideoRendererGui.ScalingType.SCALE_ASPECT_FIT, false);
-
         remoteRender = findViewById(R.id.remoteView);
         localRender = findViewById(R.id.localView);
         hangup = (Button)findViewById(R.id.huangup);
@@ -102,8 +97,8 @@ public class RTCActivity extends AppCompatActivity implements RTCClient.RTCClien
             }
         });
 
+        //RTCClient.setAudioStreamType(this,true);
         EglBase.Context eglBaseContext = EglBase.create().getEglBaseContext();
-
         _client = new RTCClient(RTCActivity.this);
         _client.initializeMediaContext(getApplicationContext(), true, true, true, eglBaseContext);
         _client.start(_callee,_jsep);

@@ -28,7 +28,10 @@ import java.util.LinkedList;
 import utils.Logger;
 
 public class RTCClient implements AVChatManager.RTCClientInterface {
-    public EglBase.Context _eglContext = null;
+    private static final String LOCAL_MEDIA_ID = "ARDAMS";
+    private static final String VIDEO_TRACK_ID = "ARDAMSv0";
+    private static final String AUDIO_TRACK_ID = "ARDAMSa0";
+	public EglBase.Context _eglContext = null;
     public String _callee = null;
     private PeerConnectionFactory factory = null;
     private MediaStream localstream = null;
@@ -89,11 +92,6 @@ public class RTCClient implements AVChatManager.RTCClientInterface {
             outgoingcall(callee);
         }
     }
-
-    private final String VIDEO_TRACK_ID = "1929283";
-    private final String AUDIO_TRACK_ID = "1928882";
-    private final String LOCAL_MEDIA_ID = "1198181";
-
 
     private VideoCapturer createCameraCapturer(boolean bIsFront) {
         Camera1Enumerator enumerator = new Camera1Enumerator(false);
