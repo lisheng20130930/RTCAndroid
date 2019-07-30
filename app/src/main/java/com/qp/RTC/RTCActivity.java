@@ -6,10 +6,14 @@ import android.opengl.EGLContext;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.DisplayMetrics;
+import android.view.Display;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.RelativeLayout;
 
 import org.webrtc.AudioSource;
 import org.webrtc.AudioTrack;
@@ -33,6 +37,7 @@ public class RTCActivity extends AppCompatActivity implements RTCClient.RTCClien
     private RTCClient _client = null;
     private SurfaceViewRenderer localRender;
     private SurfaceViewRenderer  remoteRender;
+    private Display _display = null;
     private Button hangup = null;
 
     public static void outgoingcall(Context ctx, String callee){
@@ -52,6 +57,7 @@ public class RTCActivity extends AppCompatActivity implements RTCClient.RTCClien
     @Override
     public void onLocalStream(final MediaStream stream) {
         stream.videoTracks.get(0).addSink(localRender);
+        localRender.setZOrderOnTop(true);
         localRender.setMirror(true);
         localRender.init(_client._eglContext, null);
     }
@@ -63,6 +69,13 @@ public class RTCActivity extends AppCompatActivity implements RTCClient.RTCClien
             public void run() {
                 stream.videoTracks.get(0).addSink(remoteRender);
                 remoteRender.init(_client._eglContext, null);
+                RelativeLayout.LayoutParams parmas = (RelativeLayout.LayoutParams)localRender.getLayoutParams();
+                DisplayMetrics metrics = new DisplayMetrics();
+                _display.getMetrics(metrics);
+                parmas.width = metrics.widthPixels/3;
+                parmas.height = metrics.heightPixels/4;
+                parmas.setMargins(0,30,5,0);
+                localRender.setLayoutParams(parmas);
             }
         });
     }
@@ -99,6 +112,7 @@ public class RTCActivity extends AppCompatActivity implements RTCClient.RTCClien
 
         //RTCClient.setAudioStreamType(this,true);
         EglBase.Context eglBaseContext = EglBase.create().getEglBaseContext();
+        _display = getWindowManager().getDefaultDisplay();
         _client = new RTCClient(RTCActivity.this);
         _client.initializeMediaContext(getApplicationContext(), true, true, true, eglBaseContext);
         _client.start(_callee,_jsep);

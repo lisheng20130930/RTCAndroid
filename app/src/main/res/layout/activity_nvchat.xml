@@ -6,15 +6,17 @@
 
     <org.webrtc.SurfaceViewRenderer
         android:id="@+id/remoteView"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
     <org.webrtc.SurfaceViewRenderer
         android:id="@+id/localView"
-        android:layout_alignParentBottom="true"
+        android:layout_alignParentTop="true"
         android:layout_alignParentRight="true"
-        android:layout_width="300dp"
-        android:layout_height="300dp" />
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 
     <Button android:id="@+id/huangup"
         android:layout_alignParentBottom="true"
