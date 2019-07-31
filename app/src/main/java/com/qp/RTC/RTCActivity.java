@@ -67,6 +67,7 @@ public class RTCActivity extends AppCompatActivity implements RTCClient.RTCClien
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
+                _client.setAudioStreamType(RTCActivity.this,true);
                 stream.videoTracks.get(0).addSink(remoteRender);
                 remoteRender.init(_client._eglContext, null);
                 RelativeLayout.LayoutParams parmas = (RelativeLayout.LayoutParams)localRender.getLayoutParams();
@@ -93,12 +94,13 @@ public class RTCActivity extends AppCompatActivity implements RTCClient.RTCClien
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         super.onCreate(savedInstanceState);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.activity_nvchat);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        String _callee = getIntent().getStringExtra(KEY_CALLEE);
-        String _jsep = getIntent().getStringExtra(KEY_JSEP);
+        String callee = getIntent().getStringExtra(KEY_CALLEE);
+        String jsep = getIntent().getStringExtra(KEY_JSEP);
 
         remoteRender = findViewById(R.id.remoteView);
         localRender = findViewById(R.id.localView);
@@ -110,42 +112,14 @@ public class RTCActivity extends AppCompatActivity implements RTCClient.RTCClien
             }
         });
 
-        //RTCClient.setAudioStreamType(this,true);
         EglBase.Context eglBaseContext = EglBase.create().getEglBaseContext();
         _display = getWindowManager().getDefaultDisplay();
         _client = new RTCClient(RTCActivity.this);
         _client.initializeMediaContext(getApplicationContext(), true, true, true, eglBaseContext);
-        _client.start(_callee,_jsep);
+        _client.start(callee,jsep);
     }
 
-    private VideoCapturer createCameraCapturer() {
-        Camera1Enumerator enumerator = new Camera1Enumerator(false);
-        final String[] deviceNames = enumerator.getDeviceNames();
 
-        // First, try to find front facing camera
-        for (String deviceName : deviceNames) {
-            if (enumerator.isFrontFacing(deviceName)) {
-                VideoCapturer videoCapturer = enumerator.createCapturer(deviceName, null);
-
-                if (videoCapturer != null) {
-                    return videoCapturer;
-                }
-            }
-        }
-
-        // Front facing camera not found, try something else
-        for (String deviceName : deviceNames) {
-            if (!enumerator.isFrontFacing(deviceName)) {
-                VideoCapturer videoCapturer = enumerator.createCapturer(deviceName, null);
-
-                if (videoCapturer != null) {
-                    return videoCapturer;
-                }
-            }
-        }
-
-        return null;
-    }
 
     @Override
     protected void onDestroy(){

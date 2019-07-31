@@ -295,17 +295,13 @@ public class RTCClient implements AVChatManager.RTCClientInterface {
         AVChatManager.getInstance().hangup(_callee!=null);
     }
 
-    public static void setAudioStreamType(Context ctx, boolean speaker) {
+    public void setAudioStreamType(Context ctx, boolean speaker) {
         try {
             AudioManager audioManager = (AudioManager) ctx.getSystemService(Context.AUDIO_SERVICE);
             if (speaker) {
                 audioManager.setSpeakerphoneOn(true);
-                audioManager.setStreamVolume(AudioManager.STREAM_SYSTEM,
-                        audioManager.getStreamVolume(AudioManager.STREAM_SYSTEM), AudioManager.FX_KEY_CLICK);
             } else {
                 audioManager.setSpeakerphoneOn(false);
-                audioManager.setStreamVolume(AudioManager.STREAM_VOICE_CALL,
-                        audioManager.getStreamMaxVolume(AudioManager.STREAM_VOICE_CALL), AudioManager.FX_KEY_CLICK);
             }
         }catch (Exception e){
             Logger.log(e.getMessage());
@@ -317,6 +313,7 @@ public class RTCClient implements AVChatManager.RTCClientInterface {
     }
 
     public void abort(){
+        setAudioStreamType(_context,false);
         if(null != _pc) {
             _pc.close(); // CLOSE PEER
         }
