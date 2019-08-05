@@ -23,8 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import utils.Logger;
 
 public class WebSocketChannel extends WebSocketClient {
-    //private final static String URL = "ws://192.168.18.213:8188";
-    private final static String URL = "http://47.110.157.52:8188";
+    private final static String URL = "ws://192.168.18.213:8188";
     private final RandomString stringGenerator = new RandomString();
     private ConcurrentHashMap<BigInteger, PlugHandle> attachedPlugins = new ConcurrentHashMap();
     private ConcurrentHashMap<String, ITransaction> transactions = new ConcurrentHashMap();
