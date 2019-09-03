@@ -31,12 +31,12 @@ public class RTCClient implements AVChatManager.RTCClientInterface {
     private static final String LOCAL_MEDIA_ID = "ARDAMS";
     private static final String VIDEO_TRACK_ID = "ARDAMSv0";
     private static final String AUDIO_TRACK_ID = "ARDAMSa0";
+    private static RTCClientListener _listener = null;
 	public EglBase.Context _eglContext = null;
     public String _callee = null;
     private PeerConnectionFactory factory = null;
     private MediaStream localstream = null;
     private boolean bIsFrontCamera = true;
-    private RTCClientListener _listener = null;
     private PeerConnection _pc = null;
     private Context _context = null;
     private VideoCapturer _capturer = null;
@@ -138,7 +138,7 @@ public class RTCClient implements AVChatManager.RTCClientInterface {
         }
     }
 
-    class PeerConnectionObserver implements PeerConnection.Observer {
+    static class PeerConnectionObserver implements PeerConnection.Observer {
         @Override
         public void onSignalingChange(PeerConnection.SignalingState signalingState) {
 
@@ -208,7 +208,7 @@ public class RTCClient implements AVChatManager.RTCClientInterface {
         }
     }
 
-    class PeerSdpObserver implements SdpObserver{
+    static class PeerSdpObserver implements SdpObserver{
         @Override
         public void onCreateSuccess(SessionDescription sessionDescription) {
         }
@@ -245,7 +245,7 @@ public class RTCClient implements AVChatManager.RTCClientInterface {
         return pc_cons;
     }
 
-    private void sendTrickleCandidate(IceCandidate candidate) {
+    private static void sendTrickleCandidate(IceCandidate candidate) {
         if(null!=candidate){
             AVChatManager.getInstance().trickleCandidate(candidate);
         }else{
@@ -292,7 +292,7 @@ public class RTCClient implements AVChatManager.RTCClientInterface {
     }
 
     public void hangup(){
-        AVChatManager.getInstance().hangup(_callee!=null);
+        AVChatManager.getInstance().hangup();
     }
 
     public void setAudioStreamType(Context ctx, boolean speaker) {
@@ -313,14 +313,25 @@ public class RTCClient implements AVChatManager.RTCClientInterface {
     }
 
     public void abort(){
-        setAudioStreamType(_context,false);
+        if(_capturer!=null){
+            try {
+                _capturer.stopCapture();
+            }catch (Exception e){}
+        }
         if(null != _pc) {
             _pc.close(); // CLOSE PEER
         }
-        localstream = null;
+        if(null!=_context){
+            setAudioStreamType(_context,false);
+        }
         _listener = null;
-        factory = null;
+        _callee = null;
+        _context = null;
+        _eglContext = null;
+        _capturer = null;
+        localstream = null;
         _pc = null;
+        factory = null;
         AVChatManager.getInstance().setRTCHandler(null);
         AVChatManager.getInstance().abort();
     }

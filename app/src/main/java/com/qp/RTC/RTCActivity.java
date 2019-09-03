@@ -8,6 +8,7 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.DisplayMetrics;
 import android.view.Display;
+import android.view.KeyEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
@@ -39,6 +40,7 @@ public class RTCActivity extends AppCompatActivity implements RTCClient.RTCClien
     private SurfaceViewRenderer  remoteRender;
     private Display _display = null;
     private Button hangup = null;
+    private boolean bIsClosing = false;
 
     public static void outgoingcall(Context ctx, String callee){
         Intent intent = new Intent(ctx, RTCActivity.class);
@@ -58,6 +60,7 @@ public class RTCActivity extends AppCompatActivity implements RTCClient.RTCClien
     public void onLocalStream(final MediaStream stream) {
         stream.videoTracks.get(0).addSink(localRender);
         localRender.setZOrderOnTop(true);
+        localRender.setZOrderMediaOverlay(true);
         localRender.setMirror(true);
         localRender.init(_client._eglContext, null);
     }
@@ -88,8 +91,19 @@ public class RTCActivity extends AppCompatActivity implements RTCClient.RTCClien
 
     @Override
     public void onHangup(){
-        _client.abort();
-        finish();
+        Logger.log("[Trace@RTC] onHangup Received.........................");
+        if(bIsClosing){ //Is Closing
+            Logger.log("[Trace@RTC] isClosing already!!!!........");
+            return;
+        }
+        bIsClosing = true;
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                _client.abort();
+                finish();
+            }
+        });
     }
 
     @Override
@@ -119,10 +133,25 @@ public class RTCActivity extends AppCompatActivity implements RTCClient.RTCClien
         _client.start(callee,jsep);
     }
 
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_BACK:
+                _client.hangup();
+                return true;
+            default:
+                return super.onKeyUp(keyCode, event);
+        }
+    }
 
 
     @Override
     protected void onDestroy(){
+        if(_client!=null){
+            Logger.log("[Trace@RTC] BEFOER CALL CLIENT TO ABORT");
+            _client.abort();
+            Logger.log("[Trace@RTC] AFTER CALL CLIENT TO ABORT");
+        }
         super.onDestroy();
     }
 }

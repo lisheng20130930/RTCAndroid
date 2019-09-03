@@ -314,14 +314,13 @@ public class WebSocketChannel extends WebSocketClient {
         }
     }
 
-    public void hangup(BigInteger handleId,boolean mix){
+    public void hangup(BigInteger handleId){
         record(handleId,false,""); //record close
         String tid = stringGenerator.randomString(12);
         try {
             JSONObject obj = new JSONObject();
             JSONObject msg = new JSONObject();
             msg.put("request", "hangup");
-            msg.put("mix", mix);
             obj.put("janus","message");
             obj.put("transaction", tid);
             obj.put("session_id",sessionId);
