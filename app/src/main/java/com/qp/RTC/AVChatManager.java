@@ -139,8 +139,8 @@ public class AVChatManager implements WebSocketChannel.Delegate{
         RTCActivity.incomingCall(ctx,jsep);
     }
 
-    public void hangup(boolean mix){
-        _websocket.hangup(_handleId,mix);
+    public void hangup(){
+        _websocket.hangup(_handleId);
     }
 
     public void call2(String callee, SessionDescription sdp){
