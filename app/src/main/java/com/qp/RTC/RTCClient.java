@@ -112,7 +112,6 @@ public class RTCClient implements AVChatManager.RTCClientInterface {
     private VideoTrack getCameraVideoTrack(boolean bIsFront){
         _capturer = createCameraCapturer(bIsFront);
         VideoSource vs = factory.createVideoSource(_capturer);
-        SurfaceTextureHelper surfaceTextureHelper = SurfaceTextureHelper.create("CaptureThread", _eglContext);
         _capturer.startCapture(640, 480, 15);
         return factory.createVideoTrack(VIDEO_TRACK_ID, vs);
     }

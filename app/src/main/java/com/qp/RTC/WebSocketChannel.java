@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import utils.Logger;
 
 public class WebSocketChannel extends WebSocketClient {
-    private final static String URL = "ws://192.168.18.213:8188";
+    private final static String URL = "ws://192.168.18.45:8188";
     private final RandomString stringGenerator = new RandomString();
     private ConcurrentHashMap<BigInteger, PlugHandle> attachedPlugins = new ConcurrentHashMap();
     private ConcurrentHashMap<String, ITransaction> transactions = new ConcurrentHashMap();
@@ -266,8 +266,8 @@ public class WebSocketChannel extends WebSocketClient {
             obj.put("body",msg);
             obj.put("jsep",jsep);
             sendmessage(obj.toString());
-        } catch (JSONException ex) {
-            ex.printStackTrace();
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
     }
 
@@ -287,8 +287,8 @@ public class WebSocketChannel extends WebSocketClient {
             obj.put("body",msg);
             obj.put("jsep",jsep);
             sendmessage(obj.toString());
-        } catch (JSONException ex) {
-            ex.printStackTrace();
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
     }
 
@@ -309,8 +309,8 @@ public class WebSocketChannel extends WebSocketClient {
             obj.put("handle_id",handleId);
             obj.put("body",msg);
             sendmessage(obj.toString());
-        } catch (JSONException ex) {
-            ex.printStackTrace();
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
     }
 
@@ -327,8 +327,8 @@ public class WebSocketChannel extends WebSocketClient {
             obj.put("handle_id",handleId);
             obj.put("body",msg);
             sendmessage(obj.toString());
-        } catch (JSONException ex) {
-            ex.printStackTrace();
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
     }
 
@@ -350,8 +350,8 @@ public class WebSocketChannel extends WebSocketClient {
             obj.put("handle_id",handleId);
             obj.put("candidate", msg);
             sendmessage(obj.toString());
-        } catch (JSONException ex) {
-            ex.printStackTrace();
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
     }
 
